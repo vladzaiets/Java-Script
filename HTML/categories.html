@@ -1,0 +1,106 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Смакуємо ковбаску</title>
+<!--    <link rel="stylesheet" href="/css/site.css">-->
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/site.css">
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/bootstrap-icons/font/bootstrap-icons.min.css">
+    <script src="/js/site.js"></script>
+</head>
+<body>
+    <script>loadDOM("/partials/header.html")</script>
+    <script>loadDOM("/partials/modal_confirm.html")</script>
+
+    <main class="my-container">
+        <h1 class="my-center">Наше меню</h1>
+        <a href="/category/create.html" class="btn btn-secondary">Додати категорію</a>
+        <table class="my-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Фото</th>
+                    <th>Назва</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="categories">
+
+            </tbody>
+        </table>
+    </main>
+</body>
+
+<script src="/js/bootstrap.bundle.min.js"></script>
+<script src="/js/axios.min.js"></script>
+<script>
+    const server = "https://npr211.novakv.com";
+    //тут буде зберігатися список категорій
+    const categories = document.getElementById("categories");
+    //Текст в модальному вікні
+    const pSure = document.getElementById("p-sure");
+    //Модальне вікно
+    const deleteConfirmModal = new bootstrap.Modal("#deleteConfirmModal");
+
+    let remoteId = 0;
+    axios.get(`${server}/api/category`)
+        .then(resp => {
+            // console.log("Server result", resp);
+            const {data} = resp;
+            data.forEach(category => {
+                const image = category.imagePath == null ?
+                    "/images/default.jpg" : `${server}/images/320_${category.imagePath}`;
+                categories.innerHTML +=
+                    `
+                <tr>
+                    <td>${category.id}</td>
+                    <td>
+                        <img src="${image}"
+                            alt="${category.name}" width="100">
+                    </td>
+                    <td>${category.name}</td>
+                    <td>
+                        <i class="bi bi-trash3 fs-3 text-danger"
+                            data-delete
+                            data-id="${category.id}"
+                            data-name="${category.name}"
+                            style="cursor: pointer"></i>
+                        &nbsp;
+                        <a href="/category/edit.html?id=${category.id}">
+                            <i class="bi bi-pencil-fill fs-4 text-primary"></i>
+                        </a>
+
+                    </td>
+                </tr>
+                    `;
+                // if(category.imagePath==null) {
+                //     console.log("image path == null", category.imagePath);
+                // }
+                // console.log("item", category);
+            });
+
+            onDeleteEvent();
+        });
+
+    const onDeleteEvent = () => {
+        let btns = document.querySelectorAll('[data-delete]');
+        btns.forEach(button => {
+            button.addEventListener('click', (event) => {
+                const { dataset } = event.target;
+                const {id, name} = dataset;
+                pSure.innerHTML = `Ви дійсно бажаєте видалити категорію '${name}'?`;
+                deleteConfirmModal.show();
+                remoteId = id;  //зберігаємо id - категорії, яку потрібно видалить
+            });
+        });
+    }
+
+    document.getElementById("yes-button").addEventListener("click", async () => {
+        await axios.delete(`${server}/api/category/${remoteId}`)
+        window.location.reload();
+    });
+</script>
+</html>
